@@ -128,6 +128,7 @@ export default definePlugin({
         },
     ],
     patches: [],
+    settings,
     // Delete these two below if you are only using code patches
     start() {this.update = setInterval(() => { createActivity(); }, 20000)},
     stop() {clearInterval(this.update)},
