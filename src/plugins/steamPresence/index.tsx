@@ -1,8 +1,8 @@
 import definePlugin from "@utils/types";
 
 export default definePlugin({
-    name: "Test",
-    description: "This plugin is absolutely epic",
+    name: "SteamPresence",
+    description: "This allows you to sync your Discord rich presence with your steam rich presence.",
     authors: [
         {
             id: 12345n,
