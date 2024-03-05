@@ -57,6 +57,27 @@ const enum ActivityFlag {
     INSTANCE = 1 << 0,
 }
 
+const settings = definePluginSettings({
+    appID: {
+        type: OptionType.STRING,
+        description: "Application ID (required)",
+        isValid: (value: string) => {
+            if (!value) return "Application ID is required.";
+            if (value && !/^\d+$/.test(value)) return "Application ID must be a number.";
+            return true;
+        }
+    },
+    steamId: {
+        type: OptionType.STRING,
+        description: "API Key (required)",
+        isValid: (value: string) => {
+            if (!value) return "Steam ID is required.";
+            if (value && !/^\d+$/.test(value)) return "SteamId must be a number.";
+            return true;
+        }
+    },
+});
+
 export default definePlugin({
     name: "SteamPresence",
     description: "This allows you to sync your Discord rich presence with your steam rich presence.",
