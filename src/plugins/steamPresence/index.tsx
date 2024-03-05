@@ -24,6 +24,7 @@ import definePlugin, { OptionType } from "@utils/types";
 import { findByPropsLazy } from "@webpack";
 import { ApplicationAssetUtils, FluxDispatcher, Forms } from "@webpack/common";
 
+
 interface ActivityAssets {
     large_image?: string;
     large_text?: string;
@@ -57,6 +58,8 @@ const enum ActivityFlag {
     INSTANCE = 1 << 0,
 }
 
+const logger = new Logger("SteamPresence");
+
 const settings = definePluginSettings({
     appID: {
         type: OptionType.STRING,
@@ -86,23 +89,34 @@ async function createActivity(): Promise<Activity | undefined> {
 
     if (!steamId) return;
 
-    const accountID = `${BigInt(steamId) - 76561197960265728n}`;
 
-    const response = await fetch(`https://steamcommunity.com/miniprofile/${accountID}/json`);
-    if (!response.ok) return;
+
+    const response = await fetch(`https://cors-anywhere.herokuapp.com/https://steamcommunity.com/miniprofile/${steamId}/json`);
     const data = await response.json();
+    logger.log(data);
     const game = data.in_game;
     if (!game) return;
+
+    const url = game.logo;
+    const regex = /\/steam\/apps\/(\d+)\//;
+    const match = url.match(regex);
+
+    const gameId = match ? match[1] : null;
 
     const appName = game.name;
     const state = game.rich_presence;
     const type = ActivityType.PLAYING;
+    const icon = `https://cdn.cloudflare.steamstatic.com/steam/apps/${gameId}/hero_capsule.jpg`;
 
     const activity: Activity = {
         application_id: appID || "0",
         name: appName,
         state,
         type,
+        assets: {
+            large_image: `${gameId}`,
+            large_text: appName,
+        },
         flags: 1 << 0,
     };
 
@@ -118,6 +132,14 @@ async function createActivity(): Promise<Activity | undefined> {
     return activity;
 }
 
+function setActivity(activity: Activity | null) {
+    FluxDispatcher.dispatch({
+        type: "LOCAL_ACTIVITY_UPDATE",
+        activity,
+        socketId: "SteamPresence",
+    });
+}
+
 export default definePlugin({
     name: "SteamPresence",
     description: "This allows you to sync your Discord rich presence with your steam rich presence.",
@@ -130,6 +152,11 @@ export default definePlugin({
     patches: [],
     settings,
     // Delete these two below if you are only using code patches
-    start() {this.update = setInterval(() => { createActivity(); }, 20000)},
-    stop() {clearInterval(this.update)},
+    start() {
+        this.update = setInterval(async () => {
+            const activity = await createActivity();
+            setActivity(activity!);
+        }, 40000);
+    },
+    stop() { clearInterval(this.update); },
 });
