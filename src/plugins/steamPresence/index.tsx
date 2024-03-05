@@ -78,6 +78,46 @@ const settings = definePluginSettings({
     },
 });
 
+async function createActivity(): Promise<Activity | undefined> {
+    const {
+        appID,
+        steamId
+    } = settings.store;
+
+    if (!steamId) return;
+
+    const accountID = `${BigInt(steamId) - 76561197960265728n}`;
+
+    const response = await fetch(`https://steamcommunity.com/miniprofile/${accountID}/json`);
+    if (!response.ok) return;
+    const data = await response.json();
+    const game = data.in_game;
+    if (!game) return;
+
+    const appName = game.name;
+    const state = game.rich_presence;
+    const type = ActivityType.PLAYING;
+
+    const activity: Activity = {
+        application_id: appID || "0",
+        name: appName,
+        state,
+        type,
+        flags: 1 << 0,
+    };
+
+
+
+    for (const k in activity) {
+        if (k === "type") continue;
+        const v = activity[k];
+        if (!v || v.length === 0)
+            delete activity[k];
+    }
+
+    return activity;
+}
+
 export default definePlugin({
     name: "SteamPresence",
     description: "This allows you to sync your Discord rich presence with your steam rich presence.",
@@ -89,6 +129,6 @@ export default definePlugin({
     ],
     patches: [],
     // Delete these two below if you are only using code patches
-    start() {},
-    stop() {},
+    start() {this.update = setInterval(() => { createActivity(); }, 20000)},
+    stop() {clearInterval(this.update)},
 });
