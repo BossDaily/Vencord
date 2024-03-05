@@ -16,7 +16,46 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import definePlugin from "@utils/types";
+import { definePluginSettings } from "@api/Settings";
+import { Link } from "@components/Link";
+import { Devs } from "@utils/constants";
+import { Logger } from "@utils/Logger";
+import definePlugin, { OptionType } from "@utils/types";
+import { findByPropsLazy } from "@webpack";
+import { ApplicationAssetUtils, FluxDispatcher, Forms } from "@webpack/common";
+
+interface ActivityAssets {
+    large_image?: string;
+    large_text?: string;
+    small_image?: string;
+    small_text?: string;
+}
+
+interface Activity {
+    state: string;
+    details?: string;
+    timestamps?: {
+        start?: number;
+    };
+    assets?: ActivityAssets;
+    buttons?: Array<string>;
+    name: string;
+    application_id: string;
+    metadata?: {
+        button_urls?: Array<string>;
+    };
+    type: number;
+    flags: number;
+}
+
+// only relevant enum values
+const enum ActivityType {
+    PLAYING = 0
+}
+
+const enum ActivityFlag {
+    INSTANCE = 1 << 0,
+}
 
 export default definePlugin({
     name: "SteamPresence",
