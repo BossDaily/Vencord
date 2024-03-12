@@ -91,7 +91,7 @@ async function createActivity(): Promise<Activity | undefined> {
 
 
 
-    const response = await fetch(`https://cors-anywhere.herokuapp.com/https://steamcommunity.com/miniprofile/${steamId}/json`);
+    const response = await fetch(`https://api.codetabs.com/v1/proxy?quest=https://steamcommunity.com/miniprofile/${steamId}/json`);
     const data = await response.json();
     logger.log(data);
     const game = data.in_game;
