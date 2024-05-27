@@ -17,12 +17,13 @@
 */
 
 import { definePluginSettings } from "@api/Settings";
-import { Link } from "@components/Link";
-import { Devs } from "@utils/constants";
 import { Logger } from "@utils/Logger";
-import definePlugin, { OptionType } from "@utils/types";
-import { findByPropsLazy } from "@webpack";
-import { ApplicationAssetUtils, FluxDispatcher, Forms } from "@webpack/common";
+import definePlugin, { OptionType, PluginNative } from "@utils/types";
+import { FluxDispatcher } from "@webpack/common";
+
+
+const Native = VencordNative.pluginHelpers.VoiceMessages as PluginNative<typeof import("./native")>;
+
 
 
 interface ActivityAssets {
@@ -91,9 +92,7 @@ async function createActivity(): Promise<Activity | undefined> {
 
 
 
-    const response = await fetch(`https://api.codetabs.com/v1/proxy?quest=https://steamcommunity.com/miniprofile/${steamId}/json`);
-    const data = await response.json();
-    logger.log(data);
+    const data = await Native.queryProfile(steamId);
     const game = data.in_game;
     if (!game) return;
 
