@@ -19,10 +19,10 @@
 import { definePluginSettings } from "@api/Settings";
 import { Logger } from "@utils/Logger";
 import definePlugin, { OptionType, PluginNative } from "@utils/types";
-import { FluxDispatcher } from "@webpack/common";
+import { ApplicationAssetUtils, FluxDispatcher } from "@webpack/common";
 
 
-const Native = VencordNative.pluginHelpers.VoiceMessages as PluginNative<typeof import("./native")>;
+
 
 
 
@@ -61,6 +61,11 @@ const enum ActivityFlag {
 
 const logger = new Logger("SteamPresence");
 
+async function getApplicationAsset(key: string): Promise<string> {
+    if (/https?:\/\/(cdn|media)\.discordapp\.(com|net)\/attachments\//.test(key)) return "mp:" + key.replace(/https?:\/\/(cdn|media)\.discordapp\.(com|net)\//, "");
+    return (await ApplicationAssetUtils.fetchAssetIds(settings.store.appID!, [key]))[0];
+}
+
 const settings = definePluginSettings({
     appID: {
         type: OptionType.STRING,
@@ -89,10 +94,11 @@ async function createActivity(): Promise<Activity | undefined> {
     } = settings.store;
 
     if (!steamId) return;
-
+    const Native = VencordNative.pluginHelpers.SteamPresence as PluginNative<typeof import("./native")>;
 
 
     const data = await Native.queryProfile(steamId);
+    logger.info(data);
     const game = data.in_game;
     if (!game) return;
 
@@ -106,6 +112,7 @@ async function createActivity(): Promise<Activity | undefined> {
     const state = game.rich_presence;
     const type = ActivityType.PLAYING;
     const icon = `https://cdn.cloudflare.steamstatic.com/steam/apps/${gameId}/hero_capsule.jpg`;
+    logger.info(icon);
 
     const activity: Activity = {
         application_id: appID || "0",
@@ -113,7 +120,7 @@ async function createActivity(): Promise<Activity | undefined> {
         state,
         type,
         assets: {
-            large_image: `${gameId}`,
+            large_image: await getApplicationAsset(icon),
             large_text: appName,
         },
         flags: 1 << 0,
@@ -155,7 +162,7 @@ export default definePlugin({
         this.update = setInterval(async () => {
             const activity = await createActivity();
             setActivity(activity!);
-        }, 40000);
+        }, 10000);
     },
     stop() { clearInterval(this.update); },
 });
